@@ -1,0 +1,52 @@
+<header class="border-bottom site-header"
+  style="position: sticky; top: 0; z-index: 1000;">
+  <div class="container py-3 d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ url_for('homepage') }}" class="text-decoration-none d-flex align-items-center gap-2">
+        <div class="brand-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20" />
+            <path d="M2 12h20" />
+          </svg>
+        </div>
+        <div>
+          <div class="fw-bold text-primary">MindLens</div>
+          <div class="small text-muted">AI Wellness</div>
+        </div>
+      </a>
+    </div>
+    <nav class="d-none d-md-flex gap-4 align-items-center">
+      <a class="text-decoration-none" href="{{ url_for('habit_tracker') }}">Habit Tracker</a>
+      <a class="text-decoration-none" href="{{ url_for('stress_scanner') }}">Stress Scanner</a>
+      <a class="text-decoration-none" href="{{ url_for('chatbot') }}">Chatbot</a>
+      <a class="text-decoration-none" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('index') }}">Sign Out</a>
+    </nav>
+    <button class="d-md-none btn btn-link text-dark border-0" type="button" data-bs-toggle="offcanvas"
+      data-bs-target="#mobileMenu">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Menu</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column gap-3">
+      <a class="text-decoration-none py-2" href="{{ url_for('habit_tracker') }}">Habit Tracker</a>
+      <a class="text-decoration-none py-2" href="{{ url_for('stress_scanner') }}">Stress Scanner</a>
+      <a class="text-decoration-none py-2" href="{{ url_for('chatbot') }}">Chatbot</a>
+      <a class="text-decoration-none py-2" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <div class="mt-auto">
+        <a class="btn btn-outline-secondary w-100" href="{{ url_for('index') }}">Sign Out</a>
+      </div>
+    </div>
+  </div>
+</header>

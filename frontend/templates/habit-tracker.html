@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindLens AI - Habit Tracker</title>
+  <link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+
+<body class="bg-gradient">
+  <header class="border-bottom page-topbar">
+    <div class="container py-3 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="brand-badge"></div>
+        <div>
+          <div class="fw-bold text-primary">MindLens</div>
+          <div class="small text-muted">AI Wellness</div>
+        </div>
+      </div>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('homepage') }}">Home</a>
+    </div>
+  </header>
+
+  <main class="container py-5">
+    <div class="text-center mb-4">
+      <h1 class="h3 fw-bold">Daily Habit Input</h1>
+      <p class="text-muted">Track your daily habits to help us understand your wellness patterns</p>
+    </div>
+
+    <div class="card wellness-card section-panel mx-auto mb-4">
+      <div class="card-body">
+        <h2 class="h6 d-flex align-items-center gap-2 mb-1"><span class="text-primary">&#128221;</span> Live Sensor Data</h2>
+        <p class="text-muted small mb-4">Reads from ESP32 over USB, auto-fills after 15 seconds, then refreshes every 5 seconds until submit</p>
+        <div class="row g-4">
+          <div class="col-12 col-md-4">
+            <label class="form-label">Heart Rate</label>
+            <input type="number" class="form-control" id="heart_rate" name="heart_rate" placeholder="--" step="0.1" readonly />
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label">SpO₂</label>
+            <input type="number" class="form-control" id="spo2" name="spo2" placeholder="--" step="0.1" readonly />
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label">Temperature (°C)</label>
+            <input type="number" class="form-control" id="temperature" name="temperature" placeholder="--" step="0.1" readonly />
+          </div>
+        </div>
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-success" id="sensor-submit-btn">
+            <span class="btn-text">Submit Sensor Values</span>
+            <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+          </button>
+          <div class="flex-grow-1">
+            <div id="sensor-status" class="small text-muted mb-2">Detecting sensor...</div>
+            <div id="sensor-alert"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card wellness-card section-panel mx-auto mb-4">
+      <div class="card-body">
+        <h2 class="h6 d-flex align-items-center gap-2 mb-1"><span class="text-mint">&#10004;</span> Today's Habits</h2>
+        <p class="text-muted small mb-4">Please input your habits for today. Be as accurate as possible.</p>
+
+        <div id="alert-container"></div>
+
+        <form id="habits-form">
+          <div class="row g-4">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Age</label>
+              <input type="number" class="form-control" id="age" name="age" min="1" max="120"
+                placeholder="Enter your age" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Sleep Hours</label>
+              <input type="number" class="form-control" id="sleep_hours" name="sleep_hours" min="0" max="24" step="0.5"
+                placeholder="Hours slept last night" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Work Hours</label>
+              <input type="number" class="form-control" id="work_hours" name="work_hours" min="0" max="24" step="0.5"
+                placeholder="Hours worked today" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Water Intake (Liters)</label>
+              <input type="number" class="form-control" id="water_intake" name="water_intake" min="0" step="0.1"
+                placeholder="Liters consumed today" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Screen Time (Hours)</label>
+              <input type="number" class="form-control" id="screen_time" name="screen_time" min="0" max="24" step="0.5"
+                placeholder="Total screen time today" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Exercise</label>
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="exercise" name="exercise" />
+                <label class="form-check-label" for="exercise">Did you exercise today?</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Meals per Day</label>
+              <input type="number" class="form-control" id="meals_per_day" name="meals_per_day" min="0" max="10"
+                step="1" placeholder="Number of meals today" required />
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Social Interaction</label>
+              <select class="form-select" id="social_interaction" name="social_interaction" required>
+                <option value="" selected disabled>Select interaction level</option>
+                <option value="None">None</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Caffeine Intake</label>
+              <div class="form-check form-switch mt-2">
+                <input class="form-check-input" type="checkbox" role="switch" id="caffeine_intake"
+                  name="caffeine_intake" />
+                <label class="form-check-label" for="caffeine_intake">Did you consume caffeine today?</label>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <button class="btn btn-primary px-4" id="proceed-btn">
+        <span class="btn-text">Proceed to Stress Scan</span>
+        <span class="spinner-border spinner-border-sm d-none" role="status"></span>
+      </button>
+    </div>
+  </main>
+
+  <script>
+    const SENSOR_REFRESH_MS = 5000;
+    let sensorPollingTimer = null;
+    let sensorPollingStopped = false;
+
+    function setSensorInputs(data) {
+      const hr = document.getElementById('heart_rate');
+      const sp = document.getElementById('spo2');
+      const tp = document.getElementById('temperature');
+
+      hr.value = data.heart_rate ?? '';
+      sp.value = data.spo2 ?? '';
+      tp.value = data.temperature ?? '';
+    }
+
+    function clearSensorInputs() {
+      setSensorInputs({
+        heart_rate: null,
+        spo2: null,
+        temperature: null
+      });
+    }
+
+    function updateSensorStatus(data) {
+      const statusBox = document.getElementById('sensor-status');
+      if (!statusBox) return;
+
+      if (!data.connected) {
+        statusBox.textContent = 'Detecting sensor...';
+        return;
+      }
+
+      if (!data.ready_for_display) {
+        const remaining = Number.isFinite(data.warmup_remaining_seconds)
+          ? Math.max(0, Math.ceil(data.warmup_remaining_seconds))
+          : 15;
+        statusBox.textContent = `Sensor connected. Reading values... ${remaining}s`;
+        return;
+      }
+
+      const connectedPort = data.connected_port ? ` (${data.connected_port})` : '';
+      statusBox.textContent = `Sensor connected${connectedPort}. Live values ready.`;
+    }
+
+    async function pollLatestSensor() {
+      try {
+        const res = await fetch('/latest-data');
+        const data = await res.json();
+        updateSensorStatus(data);
+
+        if (data.connected && data.ready_for_display) {
+          setSensorInputs(data);
+        } else {
+          clearSensorInputs();
+        }
+      } catch (e) {
+        document.getElementById('sensor-status').textContent = 'Detecting sensor...';
+        clearSensorInputs();
+      }
+    }
+
+    function stopSensorPolling(statusMessage) {
+      sensorPollingStopped = true;
+      if (sensorPollingTimer) {
+        clearTimeout(sensorPollingTimer);
+        sensorPollingTimer = null;
+      }
+      if (statusMessage) {
+        document.getElementById('sensor-status').textContent = statusMessage;
+      }
+    }
+
+    function scheduleSensorPolling(delayMs) {
+      if (sensorPollingStopped) return;
+      if (sensorPollingTimer) {
+        clearTimeout(sensorPollingTimer);
+      }
+      sensorPollingTimer = setTimeout(async () => {
+        await pollLatestSensor();
+        scheduleSensorPolling(SENSOR_REFRESH_MS);
+      }, delayMs);
+    }
+
+    pollLatestSensor();
+    scheduleSensorPolling(SENSOR_REFRESH_MS);
+
+    document.getElementById('sensor-submit-btn').addEventListener('click', async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('sensor-submit-btn');
+      const btnText = btn.querySelector('.btn-text');
+      const spinner = btn.querySelector('.spinner-border');
+      const alertBox = document.getElementById('sensor-alert');
+      const heart_rate = parseFloat(document.getElementById('heart_rate').value);
+      const spo2 = parseFloat(document.getElementById('spo2').value);
+      const temperature = parseFloat(document.getElementById('temperature').value);
+      if (Number.isNaN(heart_rate) || Number.isNaN(spo2) || Number.isNaN(temperature)) {
+        alertBox.innerHTML = `
+          <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <strong>No sensor data yet.</strong> Please wait for values to appear.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        return;
+      }
+      btn.disabled = true;
+      btnText.textContent = 'Submitting...';
+      spinner.classList.remove('d-none');
+      alertBox.innerHTML = '';
+      try {
+        const resp = await fetch('/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ heart_rate, spo2, temperature })
+        });
+        const result = await resp.json();
+        if (result && result.success) {
+          stopSensorPolling('Sensor values submitted. Live updates paused.');
+          localStorage.setItem('latest_sensor_record', JSON.stringify({
+            heart_rate,
+            spo2,
+            temperature,
+            created_at: new Date().toISOString()
+          }));
+          alertBox.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <strong>Saved!</strong> Sensor values stored in the database.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        } else {
+          alertBox.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <strong>Error!</strong> Failed to save sensor values.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        }
+      } catch (err) {
+        alertBox.innerHTML = `
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong> Network or server issue.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Submit Sensor Values';
+        spinner.classList.add('d-none');
+      }
+    });
+
+    function validateAndCollectFormData() {
+      const form = document.getElementById('habits-form');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return null;
+      }
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+      const email = userData.email;
+      if (!email) {
+        // Fallback or error if no email is found
+        return null;
+      }
+      return {
+        email: email,
+        age: parseInt(document.getElementById('age').value),
+        sleep_hours: parseFloat(document.getElementById('sleep_hours').value),
+        work_hours: parseFloat(document.getElementById('work_hours').value),
+        screen_time: parseFloat(document.getElementById('screen_time').value),
+        water_intake: parseFloat(document.getElementById('water_intake').value),
+        exercise: document.getElementById('exercise').checked,
+        meals_per_day: parseInt(document.getElementById('meals_per_day').value),
+        social_interaction: document.getElementById('social_interaction').value,
+        caffeine_intake: document.getElementById('caffeine_intake').checked
+      };
+    }
+
+    async function submitHabitsData(formData) {
+      try {
+        const response = await fetch('/submit-habits', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        return { success: false, message: 'Failed to save habits data' };
+      }
+    }
+
+    document.getElementById('proceed-btn').addEventListener('click', async function (e) {
+      e.preventDefault();
+      const btn = document.getElementById('proceed-btn');
+      const btnText = btn.querySelector('.btn-text');
+      const spinner = btn.querySelector('.spinner-border');
+      const alertContainer = document.getElementById('alert-container');
+      const formData = validateAndCollectFormData();
+      if (!formData) {
+        alertContainer.innerHTML = `
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+              <strong>Please complete all required fields before proceeding.</strong>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        alertContainer.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      btn.disabled = true;
+      btnText.textContent = 'Saving & Proceeding...';
+      spinner.classList.remove('d-none');
+      alertContainer.innerHTML = '';
+      const result = await submitHabitsData(formData);
+      if (result.success) {
+        localStorage.setItem('latest_habit_submission', JSON.stringify({
+          ...formData,
+          timestamp: new Date().toISOString()
+        }));
+        alertContainer.innerHTML = `
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <strong>Habits saved successfully!</strong> Proceeding to stress scan...
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        setTimeout(() => {
+          window.location.href = "{{ url_for('stress_scanner') }}";
+        }, 1500);
+      } else {
+        alertContainer.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <strong>Error!</strong> ${result.message} Please try again.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          `;
+        alertContainer.scrollIntoView({ behavior: 'smooth' });
+        btn.disabled = false;
+        btnText.textContent = 'Proceed to Stress Scan';
+        spinner.classList.add('d-none');
+      }
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', path='js/script.js') }}"></script>
+</body>
+
+</html>

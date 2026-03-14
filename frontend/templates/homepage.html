@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}MindLens AI - Homepage{% endblock %}
+
+{% block content %}
+
+<main class="container py-5">
+  <section class="text-center mb-5">
+    <h1 class="fw-bold" style="font-size:clamp(2rem,3vw,3rem)">Welcome, <span
+        class="gradient-text">User</span>
+    </h1>
+    <p class="text-muted mx-auto" style="max-width:720px">Your personal AI-powered mental wellness companion. Track
+      habits, analyze stress, and get personalized recommendations.</p>
+    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center mt-4">
+      <a class="btn btn-primary btn-lg px-4" href="{{ url_for('habit_tracker') }}">Begin Habit Tracker</a>
+      <a class="btn btn-outline-secondary btn-lg px-4" href="{{ url_for('dashboard') }}">View Dashboard</a>
+    </div>
+  </section>
+
+  <section class="row g-4 mb-5">
+    <div class="col-12 col-md-6 col-lg-3">
+      <a class="text-decoration-none" href="{{ url_for('habit_tracker') }}">
+        <div class="card wellness-card h-100 text-center p-3">
+          <div class="mx-auto p-2 rounded-3 icon-chip icon-chip-purple">
+            <span class="icon-sm">&#128197;</span>
+          </div>
+          <h3 class="h6 mt-2 mb-1">Habit Tracker</h3>
+          <p class="small text-muted">Track sleep, mood, screen time, water intake, and exercise habits</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+      <a class="text-decoration-none" href="{{ url_for('stress_scanner') }}">
+        <div class="card wellness-card h-100 text-center p-3">
+          <div class="mx-auto p-2 rounded-3 icon-chip icon-chip-blue">
+            <span class="icon-sm">&#128247;</span>
+          </div>
+          <h3 class="h6 mt-2 mb-1">Stress Scanner</h3>
+          <p class="small text-muted">AI-powered facial analysis to detect stress levels and patterns</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+      <a class="text-decoration-none" href="{{ url_for('chatbot') }}">
+        <div class="card wellness-card h-100 text-center p-3">
+          <div class="mx-auto p-2 rounded-3 icon-chip icon-chip-purple">
+            <span class="icon-sm">&#128172;</span>
+          </div>
+          <h3 class="h6 mt-2 mb-1">Wellness Chatbot</h3>
+          <p class="small text-muted">Get personalized advice and support from our AI assistant</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-12 col-md-6 col-lg-3">
+      <a class="text-decoration-none" href="{{ url_for('dashboard') }}">
+        <div class="card wellness-card h-100 text-center p-3">
+          <div class="mx-auto p-2 rounded-3 icon-chip icon-chip-blue">
+            <span class="icon-sm">&#128200;</span>
+          </div>
+          <h3 class="h6 mt-2 mb-1">Health Dashboard</h3>
+          <p class="small text-muted">Comprehensive view of your wellness data and insights</p>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section class="row g-4">
+    <div class="col-12 col-lg-4 text-center">
+      <div class="mx-auto p-3 rounded-3 icon-chip icon-chip-purple"><span
+          class="icon-sm text-mint">&#128274;</span></div>
+      <h3 class="h6 fw-semibold mt-2">Privacy First</h3>
+      <p class="text-muted small">Your wellness data is encrypted and secure. We prioritize your privacy above all.</p>
+    </div>
+    <div class="col-12 col-lg-4 text-center">
+      <div class="mx-auto p-3 rounded-3 icon-chip icon-chip-blue"><span
+          class="icon-sm text-primary">&#129504;</span></div>
+      <h3 class="h6 fw-semibold mt-2">AI-Powered</h3>
+      <p class="text-muted small">Advanced machine learning algorithms provide personalized insights and
+        recommendations.</p>
+    </div>
+    <div class="col-12 col-lg-4 text-center">
+      <div class="mx-auto p-3 rounded-3 icon-chip icon-chip-purple"><span
+          class="icon-sm text-mint">&#10024;</span></div>
+      <h3 class="h6 fw-semibold mt-2">Holistic Approach</h3>
+      <p class="text-muted small">Comprehensive wellness tracking that considers all aspects of your mental health.</p>
+    </div>
+  </section>
+</main>
+
+{% endblock %}

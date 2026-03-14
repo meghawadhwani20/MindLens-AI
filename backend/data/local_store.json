@@ -1,0 +1,52 @@
+{
+  "users": [
+    {
+      "full_name": "Megha Wadhwani",
+      "email": "meghawadhwani2@gmail.com",
+      "password": "$2b$12$qZOMQBnC3CA738Ko3/RvCeMJ941pFHsuOBtUJsprxtSGt74GVCXue",
+      "id": "716b3d71-9951-4f73-b5a6-0c3888ad642c",
+      "created_at": "2026-03-11T20:32:19.870269+00:00"
+    }
+  ],
+  "habits": [
+    {
+      "email": "meghawadhwani2@gmail.com",
+      "age": 38,
+      "sleep_hours": 8.0,
+      "work_hours": 9.0,
+      "screen_time": 6.0,
+      "water_intake": 3.0,
+      "exercise": true,
+      "meals_per_day": 2,
+      "social_interaction": "Low",
+      "caffeine_intake": true,
+      "timestamp": "2026-03-11T20:33:00.002144",
+      "id": "7481f6f4-8801-4763-9026-6ab772c33404"
+    }
+  ],
+  "stress_scans": [
+    {
+      "email": "meghawadhwani2@gmail.com",
+      "emotion": "fear",
+      "emotion_confidence": 0.891,
+      "mouth_open": false,
+      "eyebrow_raise": true,
+      "jaw_clench_score": 0.68,
+      "jaw_tension": "Medium",
+      "slouch_score": 0.38,
+      "head_tilt_angle": 0.0,
+      "shoulder_alignment_diff": 0.0,
+      "spine_curve_ratio": 0.734,
+      "pose_confidence": 0.55,
+      "posture_quality": "Forward-leaning",
+      "stress_model_score": 56.79,
+      "mindlens_model_score": 50.504,
+      "avg_stress": 53.647,
+      "overall_average_stress": 53.647,
+      "overall_stress": "Moderate",
+      "scanned_at": "2026-03-11T20:48:37.796543",
+      "id": "3e8e63a0-6711-4b91-b11d-144376e9fa6c"
+    }
+  ],
+  "sensor_records": []
+}

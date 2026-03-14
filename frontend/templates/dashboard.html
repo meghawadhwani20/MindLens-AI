@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindLens AI - Dashboard</title>
+  <link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}" />
+</head>
+
+<body class="bg-gradient">
+  <header class="border-bottom page-topbar">
+    <div class="container py-3 d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div class="brand-badge"></div>
+        <div>
+          <div class="fw-bold text-primary">MindLens</div>
+          <div class="small text-muted">AI Wellness</div>
+        </div>
+      </div>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('homepage') }}">Home</a>
+    </div>
+  </header>
+
+  <main class="container py-5">
+    <div class="text-center mb-4">
+      <h1 class="h3 fw-bold dashboard-title">Wellness Dashboard</h1>
+      <p class="text-muted">Real-time insights into your mental health and stress levels</p>
+      <div id="stream-status" class="small text-muted stream-status"></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-lg-6">
+        <div class="card wellness-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h6 d-flex align-items-center gap-2 mb-0"><span>Stress</span> Stress Scan Insights</h2>
+              <span class="badge bg-primary" id="stress-status-badge">Moderate</span>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h4 mb-1" id="emotion">Neutral</div>
+                  <div class="small text-muted">Current Emotion</div>
+                  <div class="small text-success" id="emotion-confidence">68% confidence</div>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h4 mb-1" id="jaw-tension">Low</div>
+                  <div class="small text-muted">Jaw Tension</div>
+                  <div class="progress mt-2" style="height: 4px;">
+                    <div id="jaw-tension-bar" class="progress-bar bg-secondary" style="width: 25%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h4 mb-1" id="posture-quality">Upright</div>
+                  <div class="small text-muted">Posture Quality</div>
+                  <div class="progress mt-2" style="height: 4px;">
+                    <div id="posture-bar" class="progress-bar" style="width: 80%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h4 mb-1" id="overall-stress">Moderate</div>
+                  <div class="small text-muted">Overall Stress</div>
+                  <div class="progress mt-2" style="height: 4px;">
+                    <div id="stress-bar" class="progress-bar bg-secondary" style="width: 48%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h5 mb-1" id="stress-model-score">45.6%</div>
+                  <div class="small text-muted">Facial Model Score</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h5 mb-1" id="mindlens-model-score">47.8%</div>
+                  <div class="small text-muted">Habit Model Score</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h5 mb-1" id="avg-stress-score">46.7</div>
+                  <div class="small text-muted">Average Stress Score</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h5 mb-1" id="slouch-score">0.28</div>
+                  <div class="small text-muted">Slouch Index</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h5 mb-1" id="jaw-clench-score">41%</div>
+                  <div class="small text-muted">Jaw Clench</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-3 border rounded text-center summary-tile">
+                  <div class="h5 mb-1" id="scan-posture-metric">Upright</div>
+                  <div class="small text-muted">Posture Metric</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 small text-muted">
+              Last updated: <span id="stress-scan-time">Loading latest update...</span>
+            </div>
+
+            <div class="mt-3">
+              <h6 class="fw-bold mb-2">Recommendations</h6>
+              <div id="recommendations" class="small recommendations-panel">
+                <div class="recommendation-item">
+                  <span class="recommendation-dot"></span>
+                  <span>Take a 10 to 15 minute walk to refresh your mind.</span>
+                </div>
+                <div class="recommendation-item">
+                  <span class="recommendation-dot"></span>
+                  <span>Drink a glass of water and stay hydrated.</span>
+                </div>
+                <div class="recommendation-item">
+                  <span class="recommendation-dot"></span>
+                  <span>Maintain good posture while sitting or working.</span>
+                </div>
+                <div class="recommendation-item">
+                  <span class="recommendation-dot"></span>
+                  <span>Practice slow deep breathing for a few minutes.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-6">
+        <div class="card wellness-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h2 class="h6 d-flex align-items-center gap-2 mb-0"><span>Health</span> Health Indicators</h2>
+              <span class="badge bg-secondary" id="health-status-badge">Balanced</span>
+            </div>
+
+            <div class="row g-2">
+              <div class="col-6 mb-3">
+                <div class="p-2 border rounded summary-tile">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Blood Pressure</span>
+                    <span class="badge bg-secondary" id="bp-badge">Normal</span>
+                  </div>
+                  <div class="fw-bold" id="blood-pressure">118/76</div>
+                  <div class="small text-muted" id="bp-category">Stable</div>
+                </div>
+              </div>
+
+              <div class="col-6 mb-3">
+                <div class="p-2 border rounded summary-tile">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Heart Rate</span>
+                    <span class="badge bg-secondary" id="hr-badge">Normal</span>
+                  </div>
+                  <div class="fw-bold" id="heart-rate">74.0 bpm</div>
+                  <div class="small text-muted" id="hr-category">Resting</div>
+                </div>
+              </div>
+
+              <div class="col-6 mb-3">
+                <div class="p-2 border rounded summary-tile">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Cholesterol</span>
+                    <span class="badge bg-secondary" id="chol-badge">Normal</span>
+                  </div>
+                  <div class="fw-bold" id="cholesterol">176 mg/dL</div>
+                  <div class="small text-muted" id="chol-category">Healthy</div>
+                </div>
+              </div>
+
+              <div class="col-6 mb-3">
+                <div class="p-2 border rounded summary-tile">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Glucose</span>
+                    <span class="badge bg-secondary" id="glucose-badge">Normal</span>
+                  </div>
+                  <div class="fw-bold" id="glucose">93 mg/dL</div>
+                  <div class="small text-muted" id="glucose-category">Stable</div>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="p-2 border rounded summary-tile">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Insulin</span>
+                    <span class="badge bg-secondary" id="insulin-badge">Normal</span>
+                  </div>
+                  <div class="fw-bold" id="insulin">7.2 uIU/mL</div>
+                  <div class="small text-muted" id="insulin-category">Healthy</div>
+                </div>
+              </div>
+
+              <div class="col-6">
+                <div class="p-2 border rounded summary-tile">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="small text-muted">Mental Health</span>
+                    <span class="badge bg-secondary" id="mental-health-badge">Good</span>
+                  </div>
+                  <div class="fw-bold" id="mental-health">7.1/10</div>
+                  <div class="small text-muted" id="mental-health-category">Balanced</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 small text-muted">
+              Last updated: <span id="health-metrics-time">Loading latest update...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-12 col-md-6 col-lg-6">
+        <div class="card wellness-card text-center p-3">
+          <div class="h4 mb-1" id="latest-emotion">Neutral</div>
+          <div class="small text-muted">Latest Emotion</div>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 col-lg-6">
+        <div class="card wellness-card text-center p-3">
+          <div class="h4 mb-1" id="posture-icon">Upright</div>
+          <div class="small text-muted">Posture Quality</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8 col-xl-7">
+        <div class="card wellness-card text-center p-4">
+          <div class="card-body">
+            <h2 class="h5 fw-bold mb-3">Wellness Chatbot</h2>
+            <p class="text-muted mb-4">
+              Ask the AI assistant questions and get simple guidance to help reduce stress and improve your wellbeing.
+            </p>
+            <a class="btn btn-primary px-4 py-2" href="{{ url_for('chatbot') }}">Open Wellness Chatbot</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+  <script src="{{ url_for('static', path='js/script.js') }}"></script>
+</body>
+
+</html>
