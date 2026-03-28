@@ -8,7 +8,7 @@
 
   <link rel="icon" href="{{ url_for('static', path='favicon.ico') }}" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}?v=20260327b" />
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
@@ -51,31 +51,37 @@
             <h2 class="h6 mb-2">📷 Camera View</h2>
             <p id="camera-status" class="text-muted small">Ready to scan</p>
 
-            <div class="ratio ratio-16x9 rounded overflow-hidden camera-frame position-relative">
-              <video id="camera" autoplay playsinline muted class="w-100 h-100"
+            <div class="rounded overflow-hidden camera-frame position-relative">
+              <video id="camera" autoplay playsinline muted class="w-100 h-100 camera-video"
                 style="object-fit:cover; display: none;">
               </video>
-              <div id="face-guide-overlay" class="face-guide-overlay" style="display:none;" aria-hidden="true">
-                <div class="face-guide-box">
-                  <span class="face-guide-corner corner-tl"></span>
-                  <span class="face-guide-corner corner-tr"></span>
-                  <span class="face-guide-corner corner-bl"></span>
-                  <span class="face-guide-corner corner-br"></span>
-                  <span class="face-guide-dot dot-forehead"></span>
-                  <span class="face-guide-dot dot-left-eye"></span>
-                  <span class="face-guide-dot dot-right-eye"></span>
-                  <span class="face-guide-dot dot-nose"></span>
-                  <span class="face-guide-dot dot-mouth-left"></span>
-                  <span class="face-guide-dot dot-mouth-right"></span>
-                  <span class="face-guide-dot dot-chin"></span>
-                </div>
+              <div class="camera-frame-chrome" aria-hidden="true">
+                <div class="camera-frame-outline"></div>
+                <div class="camera-frame-inner"></div>
+              </div>
+              <div id="camera-placeholder"
+                class="position-absolute top-50 start-50 translate-middle text-center px-4 camera-placeholder">
+                <div class="small text-uppercase fw-semibold mb-2 text-info">Front Camera</div>
+                <div id="camera-placeholder-title" class="text-white fw-semibold">Waiting for camera access</div>
+                <div id="camera-placeholder-detail" class="small text-white-50 mt-1">Allow permissions to show your face preview here</div>
               </div>
               <canvas id="face-overlay" class="position-absolute top-0 start-0 w-100 h-100"
-                style="pointer-events:none; display:none;"></canvas>
+                style="pointer-events:none; display:none; z-index:1;"></canvas>
               <div id="face-detection-badge"
                 class="position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill small fw-semibold text-white"
-                style="display:none; pointer-events:none; background:rgba(15, 23, 42, 0.7); border:1px solid rgba(90, 255, 180, 0.65);">
+                style="display:none; pointer-events:none; z-index:4; background:rgba(15, 23, 42, 0.7); border:1px solid rgba(90, 255, 180, 0.65);">
                 Face detected
+              </div>
+              <div id="capture-indicator"
+                class="position-absolute bottom-0 start-0 end-0 px-3 pb-3 pt-5 text-white capture-indicator"
+                style="display:none; z-index:4;">
+                <div class="d-flex align-items-center justify-content-between rounded-4 px-3 py-2 capture-indicator-bar">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="capture-dot"></span>
+                    <span id="capture-indicator-text" class="small fw-semibold">Live preview</span>
+                  </div>
+                  <span id="capture-frame-count" class="small text-white-50">0/3</span>
+                </div>
               </div>
             </div>
 
@@ -132,10 +138,13 @@
   <!-- SCRIPT -->
   <script>
     const video = document.getElementById('camera');
-    const faceGuideOverlay = document.getElementById('face-guide-overlay');
+    const cameraPlaceholder = document.getElementById('camera-placeholder');
     const faceOverlay = document.getElementById('face-overlay');
     const faceDetectionBadge = document.getElementById('face-detection-badge');
     const overlayCtx = faceOverlay.getContext('2d');
+    const captureIndicator = document.getElementById('capture-indicator');
+    const captureIndicatorText = document.getElementById('capture-indicator-text');
+    const captureFrameCount = document.getElementById('capture-frame-count');
     const startBtn = document.getElementById('start-scan');
     const stopBtn = document.getElementById('stop-scan');
     const retakeBtn = document.getElementById('retake');
@@ -152,22 +161,53 @@
     let isScanning = false;
     let capturedFrames = [];
     let faceDetector = null;
-    let landmarkRafId = null;
+    let detectionRafId = null;
+    let detectionTimerId = null;
     let landmarkDetectionRunning = false;
-    let previousBoxes = [];
-    const FACE_CONTOUR_KEYS = ['silhouette', 'lips', 'leftEye', 'rightEye', 'leftEyebrow', 'rightEyebrow'];
-    const HIGHLIGHT_KEYPOINT_INDICES = [10, 33, 61, 152, 199, 263, 291];
+    let faceApiAvailable = null;
+    let targetFaceState = null;
+    let renderedFaceState = null;
+    let renderedDots = [];
+    const FACE_DETECTION_INTERVAL_MS = 100;
+    const FACE_GUIDE_COLOR = 'rgba(74, 222, 128, 0.88)';
+    const FACE_GUIDE_DOT_COLOR = 'rgba(56, 189, 248, 0.82)';
+    const FACE_GUIDE_CORE_COLOR = 'rgba(220, 252, 231, 0.96)';
+    const FACE_GUIDE_LERP = 0.12;
+    const FACE_GUIDE_IDLE_OPACITY = 0.3;
+    const FACE_GUIDE_ACTIVE_OPACITY = 0.85;
+    const FACE_GUIDE_DOTS = [
+      { x: 0.5, y: 0.08, scale: 1.0, pulseOffset: 0.0 },
+      { x: 0.18, y: 0.22, scale: 0.9, pulseOffset: 0.6 },
+      { x: 0.82, y: 0.22, scale: 0.9, pulseOffset: 1.2 },
+      { x: 0.26, y: 0.42, scale: 0.95, pulseOffset: 1.8 },
+      { x: 0.74, y: 0.42, scale: 0.95, pulseOffset: 2.4 },
+      { x: 0.5, y: 0.5, scale: 1.1, pulseOffset: 3.0 },
+      { x: 0.22, y: 0.8, scale: 0.95, pulseOffset: 3.6 },
+      { x: 0.78, y: 0.8, scale: 0.95, pulseOffset: 4.2 },
+      { x: 0.5, y: 0.94, scale: 1.0, pulseOffset: 4.8 }
+    ];
+    const FALLBACK_FACE_STATE = {
+      cx: 0.5,
+      cy: 0.5,
+      rx: 0.22,
+      ry: 0.31,
+      opacity: FACE_GUIDE_IDLE_OPACITY
+    };
 
     async function loadFaceDetector() {
       if (faceDetector) return faceDetector;
-      faceDetector = await faceLandmarksDetection.createDetector(
-        faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
-        {
-          runtime: 'tfjs',
-          maxFaces: 5,
-          refineLandmarks: true
-        }
-      );
+
+      if ('FaceDetector' in window) {
+        faceApiAvailable = true;
+        faceDetector = new FaceDetector({
+          fastMode: true,
+          maxDetectedFaces: 1
+        });
+        return faceDetector;
+      }
+
+      faceApiAvailable = false;
+      faceDetector = null;
       return faceDetector;
     }
 
@@ -186,8 +226,26 @@
       faceDetectionBadge.style.display = visible ? 'block' : 'none';
     }
 
-    function setFaceGuideVisible(visible) {
-      faceGuideOverlay.style.display = visible ? 'block' : 'none';
+    function setCameraPlaceholder(message, detail = '') {
+      const title = document.getElementById('camera-placeholder-title');
+      const subtitle = document.getElementById('camera-placeholder-detail');
+      if (title) title.textContent = message;
+      if (subtitle) subtitle.textContent = detail;
+      cameraPlaceholder.style.display = 'block';
+    }
+
+    function hideCameraPlaceholder() {
+      cameraPlaceholder.style.display = 'none';
+    }
+
+    function setCaptureIndicator(visible, label = 'Live preview', frameCount = capturedFrames.length) {
+      captureIndicatorText.textContent = label;
+      captureFrameCount.textContent = `${frameCount}/3`;
+      captureIndicator.style.display = visible ? 'block' : 'none';
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
     }
 
     function mapPointToOverlay(x, y) {
@@ -212,236 +270,220 @@
       return start + ((end - start) * amount);
     }
 
-    function getFaceBounds(prediction) {
-      const box = prediction.box || prediction.boundingBox || {};
-      const keypoints = prediction.keypoints || [];
-
-      let xMin = Number(box.xMin);
-      let yMin = Number(box.yMin);
-      let xMax = Number(box.xMax);
-      let yMax = Number(box.yMax);
-
-      if (!Number.isFinite(xMin) || !Number.isFinite(yMin) || !Number.isFinite(xMax) || !Number.isFinite(yMax)) {
-        const topLeft = Array.isArray(box.topLeft) ? box.topLeft[0] || box.topLeft : null;
-        const bottomRight = Array.isArray(box.bottomRight) ? box.bottomRight[0] || box.bottomRight : null;
-        if (topLeft && bottomRight) {
-          xMin = Number(topLeft.x ?? topLeft[0]);
-          yMin = Number(topLeft.y ?? topLeft[1]);
-          xMax = Number(bottomRight.x ?? bottomRight[0]);
-          yMax = Number(bottomRight.y ?? bottomRight[1]);
-        }
-      }
-
-      if ((!Number.isFinite(xMin) || !Number.isFinite(yMin) || !Number.isFinite(xMax) || !Number.isFinite(yMax)) && keypoints.length > 0) {
-        const xs = keypoints.map((pt) => Number(pt.x ?? pt[0])).filter(Number.isFinite);
-        const ys = keypoints.map((pt) => Number(pt.y ?? pt[1])).filter(Number.isFinite);
-        if (xs.length > 0 && ys.length > 0) {
-          xMin = Math.min(...xs);
-          yMin = Math.min(...ys);
-          xMax = Math.max(...xs);
-          yMax = Math.max(...ys);
-        }
-      }
-
-      if (!Number.isFinite(xMin) || !Number.isFinite(yMin) || !Number.isFinite(xMax) || !Number.isFinite(yMax)) {
-        return null;
-      }
-
-      const paddingX = (xMax - xMin) * 0.08;
-      const paddingY = (yMax - yMin) * 0.12;
-
+    function createCenteredFaceState(opacity = FACE_GUIDE_IDLE_OPACITY) {
+      const overlayW = faceOverlay.width || video.clientWidth || 640;
+      const overlayH = faceOverlay.height || video.clientHeight || 480;
       return {
-        xMin: Math.max(0, xMin - paddingX),
-        yMin: Math.max(0, yMin - paddingY),
-        xMax: xMax + paddingX,
-        yMax: yMax + paddingY
+        cx: overlayW * FALLBACK_FACE_STATE.cx,
+        cy: overlayH * FALLBACK_FACE_STATE.cy,
+        rx: overlayW * FALLBACK_FACE_STATE.rx,
+        ry: overlayH * FALLBACK_FACE_STATE.ry,
+        opacity
       };
     }
 
-    function getAnnotationPoints(prediction, key) {
-      const points = prediction.annotations?.[key];
-      return Array.isArray(points) ? points : [];
+    function createSimulatedFaceState() {
+      return createCenteredFaceState(FACE_GUIDE_ACTIVE_OPACITY * 0.72);
     }
 
-    function drawLandmarkPoint(point, radius = 1.5) {
-      const mapped = mapPointToOverlay(Number(point.x ?? point[0]), Number(point.y ?? point[1]));
-      overlayCtx.beginPath();
-      overlayCtx.arc(mapped.x, mapped.y, radius, 0, Math.PI * 2);
-      overlayCtx.fill();
+    function normalizeDetectedFaceState(face) {
+      const box = face?.boundingBox;
+      if (!box) return null;
+
+      const x = Number(box.x ?? box.left ?? 0);
+      const y = Number(box.y ?? box.top ?? 0);
+      const width = Number(box.width ?? 0);
+      const height = Number(box.height ?? 0);
+
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+        return null;
+      }
+
+      const center = mapPointToOverlay(x + (width / 2), y + (height / 2));
+      const overlayTop = mapPointToOverlay(x, y);
+      const overlayBottom = mapPointToOverlay(x + width, y + height);
+      const overlayWidth = Math.max(0, overlayBottom.x - overlayTop.x);
+      const overlayHeight = Math.max(0, overlayBottom.y - overlayTop.y);
+
+      return {
+        cx: center.x,
+        cy: center.y,
+        rx: Math.max(28, overlayWidth * 0.62),
+        ry: Math.max(36, overlayHeight * 0.72),
+        opacity: FACE_GUIDE_ACTIVE_OPACITY
+      };
     }
 
-    function drawDetectionBox(box) {
+    function getSmoothedFaceState() {
+      const fallbackState = faceApiAvailable === false
+        ? createSimulatedFaceState(performance.now())
+        : createCenteredFaceState(FACE_GUIDE_IDLE_OPACITY);
+      const nextTarget = targetFaceState || fallbackState;
+
+      renderedFaceState = renderedFaceState
+        ? {
+          cx: lerp(renderedFaceState.cx, nextTarget.cx, FACE_GUIDE_LERP),
+          cy: lerp(renderedFaceState.cy, nextTarget.cy, FACE_GUIDE_LERP),
+          rx: lerp(renderedFaceState.rx, nextTarget.rx, FACE_GUIDE_LERP),
+          ry: lerp(renderedFaceState.ry, nextTarget.ry, FACE_GUIDE_LERP),
+          opacity: lerp(renderedFaceState.opacity, nextTarget.opacity, FACE_GUIDE_LERP)
+        }
+        : nextTarget;
+
+      renderedDots = FACE_GUIDE_DOTS.map((dot, index) => {
+        const targetDot = {
+          x: renderedFaceState.cx + ((dot.x - 0.5) * renderedFaceState.rx * 2),
+          y: renderedFaceState.cy + ((dot.y - 0.5) * renderedFaceState.ry * 2)
+        };
+        const previousDot = renderedDots[index];
+        return previousDot
+          ? {
+            x: lerp(previousDot.x, targetDot.x, FACE_GUIDE_LERP),
+            y: lerp(previousDot.y, targetDot.y, FACE_GUIDE_LERP)
+          }
+          : targetDot;
+      });
+
+      return renderedFaceState;
+    }
+
+    function drawGlowDot(x, y, radius, opacity) {
       overlayCtx.save();
-      overlayCtx.strokeStyle = 'rgba(90, 255, 180, 0.95)';
-      overlayCtx.fillStyle = 'rgba(90, 255, 180, 0.08)';
-      overlayCtx.lineWidth = 2.5;
-      overlayCtx.shadowColor = 'rgba(90, 255, 180, 0.35)';
-      overlayCtx.shadowBlur = 16;
+      overlayCtx.globalAlpha = opacity;
+      overlayCtx.fillStyle = FACE_GUIDE_DOT_COLOR;
+      overlayCtx.shadowColor = FACE_GUIDE_DOT_COLOR;
+      overlayCtx.shadowBlur = 10;
       overlayCtx.beginPath();
-      overlayCtx.roundRect(box.x, box.y, box.width, box.height, 16);
+      overlayCtx.arc(x, y, radius, 0, Math.PI * 2);
+      overlayCtx.fill();
+      overlayCtx.beginPath();
+      overlayCtx.arc(x, y, Math.max(1.5, radius * 0.42), 0, Math.PI * 2);
+      overlayCtx.fillStyle = FACE_GUIDE_CORE_COLOR;
+      overlayCtx.shadowBlur = 0;
+      overlayCtx.fill();
+      overlayCtx.restore();
+    }
+
+    function drawOvalFrame(state) {
+      overlayCtx.save();
+      overlayCtx.strokeStyle = FACE_GUIDE_COLOR;
+      overlayCtx.fillStyle = 'rgba(12, 18, 28, 0.2)';
+      overlayCtx.globalAlpha = state.opacity;
+      overlayCtx.lineWidth = 1.5;
+      overlayCtx.shadowColor = FACE_GUIDE_COLOR;
+      overlayCtx.shadowBlur = 12;
+      overlayCtx.beginPath();
+      overlayCtx.ellipse(state.cx, state.cy, state.rx, state.ry, 0, 0, Math.PI * 2);
       overlayCtx.fill();
       overlayCtx.stroke();
       overlayCtx.restore();
     }
 
-    function drawContour(points, closePath = false) {
-      if (!points || points.length < 2) return;
+    function drawRectangleFrame(state) {
+      const rectX = state.cx - state.rx;
+      const rectY = state.cy - state.ry;
+      const rectWidth = state.rx * 2;
+      const rectHeight = state.ry * 2;
+      const cornerRadius = Math.min(28, Math.min(rectWidth, rectHeight) * 0.12);
 
+      overlayCtx.save();
+      overlayCtx.strokeStyle = FACE_GUIDE_COLOR;
+      overlayCtx.globalAlpha = state.opacity;
+      overlayCtx.lineWidth = 1.5;
+      overlayCtx.shadowColor = FACE_GUIDE_COLOR;
+      overlayCtx.shadowBlur = 12;
       overlayCtx.beginPath();
-      points.forEach((point, index) => {
-        const mapped = mapPointToOverlay(Number(point.x ?? point[0]), Number(point.y ?? point[1]));
-        if (index === 0) {
-          overlayCtx.moveTo(mapped.x, mapped.y);
-        } else {
-          overlayCtx.lineTo(mapped.x, mapped.y);
-        }
+      overlayCtx.roundRect(rectX, rectY, rectWidth, rectHeight, cornerRadius);
+      overlayCtx.stroke();
+      overlayCtx.restore();
+    }
+
+    function drawFaceDots(state, now) {
+      const baseRadius = Math.max(3, Math.min(state.rx, state.ry) * 0.065);
+      FACE_GUIDE_DOTS.forEach((dot, index) => {
+        const point = renderedDots[index];
+        if (!point) return;
+        const pulse = 1 + (Math.sin((now / 280) + dot.pulseOffset) * 0.2);
+        drawGlowDot(point.x, point.y, baseRadius * dot.scale * pulse, state.opacity);
       });
-
-      if (closePath) {
-        overlayCtx.closePath();
-      }
-
-      overlayCtx.stroke();
     }
 
-    function drawCornerBrackets(bounds) {
-      const topLeft = mapPointToOverlay(bounds.xMin, bounds.yMin);
-      const bottomRight = mapPointToOverlay(bounds.xMax, bounds.yMax);
-      const width = Math.max(0, bottomRight.x - topLeft.x);
-      const height = Math.max(0, bottomRight.y - topLeft.y);
-      const bracket = Math.max(14, Math.min(width, height) * 0.14);
-
-      overlayCtx.beginPath();
-      overlayCtx.moveTo(topLeft.x, topLeft.y + bracket);
-      overlayCtx.lineTo(topLeft.x, topLeft.y);
-      overlayCtx.lineTo(topLeft.x + bracket, topLeft.y);
-
-      overlayCtx.moveTo(bottomRight.x - bracket, topLeft.y);
-      overlayCtx.lineTo(bottomRight.x, topLeft.y);
-      overlayCtx.lineTo(bottomRight.x, topLeft.y + bracket);
-
-      overlayCtx.moveTo(topLeft.x, bottomRight.y - bracket);
-      overlayCtx.lineTo(topLeft.x, bottomRight.y);
-      overlayCtx.lineTo(topLeft.x + bracket, bottomRight.y);
-
-      overlayCtx.moveTo(bottomRight.x - bracket, bottomRight.y);
-      overlayCtx.lineTo(bottomRight.x, bottomRight.y);
-      overlayCtx.lineTo(bottomRight.x, bottomRight.y - bracket);
-      overlayCtx.stroke();
-    }
-
-    function drawFaceMesh(predictions) {
+    function drawFaceGuide() {
       clearOverlay();
-
-      overlayCtx.strokeStyle = 'rgba(90, 255, 180, 0.95)';
-      overlayCtx.fillStyle = 'rgba(255, 255, 180, 0.95)';
-      overlayCtx.lineWidth = 1.4;
-      overlayCtx.lineJoin = 'round';
-      overlayCtx.lineCap = 'round';
-      overlayCtx.shadowColor = 'rgba(90, 255, 180, 0.28)';
-      overlayCtx.shadowBlur = 10;
-
-      const nextBoxes = [];
-
-      predictions.forEach((prediction, index) => {
-        const bounds = getFaceBounds(prediction);
-        if (!bounds) return;
-
-        const topLeft = mapPointToOverlay(bounds.xMin, bounds.yMin);
-        const bottomRight = mapPointToOverlay(bounds.xMax, bounds.yMax);
-
-        const rawBox = {
-          x: topLeft.x,
-          y: topLeft.y,
-          width: Math.max(0, bottomRight.x - topLeft.x),
-          height: Math.max(0, bottomRight.y - topLeft.y)
-        };
-
-        const previous = previousBoxes[index];
-        const smoothedBox = previous
-          ? {
-            x: lerp(previous.x, rawBox.x, 0.45),
-            y: lerp(previous.y, rawBox.y, 0.45),
-            width: lerp(previous.width, rawBox.width, 0.45),
-            height: lerp(previous.height, rawBox.height, 0.45)
-          }
-          : rawBox;
-
-        nextBoxes.push(smoothedBox);
-        drawDetectionBox(smoothedBox);
-
-        FACE_CONTOUR_KEYS.forEach((key) => {
-          const points = getAnnotationPoints(prediction, key);
-          drawContour(points, key === 'leftEye' || key === 'rightEye' || key === 'leftIris' || key === 'rightIris' || key === 'lips');
-        });
-
-        const keypoints = Array.isArray(prediction.keypoints) ? prediction.keypoints : [];
-        HIGHLIGHT_KEYPOINT_INDICES.forEach((pointIndex) => {
-          const point = keypoints[pointIndex];
-          if (point) {
-            drawLandmarkPoint(point, 2.4);
-          }
-        });
-
-        drawCornerBrackets({
-          xMin: bounds.xMin,
-          yMin: bounds.yMin,
-          xMax: bounds.xMax,
-          yMax: bounds.yMax
-        });
-      });
-
-      overlayCtx.shadowBlur = 0;
-      previousBoxes = nextBoxes;
-      setFaceDetectionBadge(nextBoxes.length > 0, nextBoxes.length > 1 ? `${nextBoxes.length} faces detected` : 'Face detected');
-    }
-
-    async function detectAndDrawBoxes() {
       if (!landmarkDetectionRunning) return;
       if (!video || video.readyState < 2) {
-        landmarkRafId = requestAnimationFrame(detectAndDrawBoxes);
+        detectionRafId = requestAnimationFrame(drawFaceGuide);
+        return;
+      }
+
+      syncOverlaySize();
+      const now = performance.now();
+      const smoothedState = getSmoothedFaceState();
+      drawRectangleFrame(smoothedState);
+      drawOvalFrame(smoothedState);
+      drawFaceDots(smoothedState, now);
+
+      detectionRafId = requestAnimationFrame(drawFaceGuide);
+    }
+
+    async function updateDetectedFace() {
+      if (!landmarkDetectionRunning) return;
+      if (!video || video.readyState < 2) {
+        detectionTimerId = window.setTimeout(updateDetectedFace, FACE_DETECTION_INTERVAL_MS);
         return;
       }
 
       try {
         const detector = await loadFaceDetector();
-        syncOverlaySize();
-        const faces = await detector.estimateFaces(video, { flipHorizontal: false });
-        if (faces && faces.length > 0) {
-          drawFaceMesh(faces);
+        if (detector) {
+          const faces = await detector.detect(video);
+          const nextState = normalizeDetectedFaceState(Array.isArray(faces) ? faces[0] : null);
+          targetFaceState = nextState || createCenteredFaceState(FACE_GUIDE_IDLE_OPACITY);
+          if (nextState) {
+            setFaceDetectionBadge(true, 'Face detected');
+          } else {
+            setFaceDetectionBadge(true, 'Adjusting to face');
+          }
         } else {
-          previousBoxes = [];
-          clearOverlay();
-          setFaceDetectionBadge(false);
+          targetFaceState = createSimulatedFaceState();
+          setFaceDetectionBadge(true, 'Scanning edges');
         }
       } catch (_err) {
-        previousBoxes = [];
-        clearOverlay();
-        setFaceDetectionBadge(false);
+        targetFaceState = createCenteredFaceState(FACE_GUIDE_IDLE_OPACITY);
+        setFaceDetectionBadge(true, 'Adjusting to face');
       }
 
-      landmarkRafId = requestAnimationFrame(detectAndDrawBoxes);
+      detectionTimerId = window.setTimeout(updateDetectedFace, FACE_DETECTION_INTERVAL_MS);
     }
 
     function startLandmarkDetection() {
       if (landmarkDetectionRunning) return;
       landmarkDetectionRunning = true;
-      setFaceGuideVisible(true);
       faceOverlay.style.display = 'block';
       syncOverlaySize();
-      detectAndDrawBoxes();
+      targetFaceState = createCenteredFaceState(FACE_GUIDE_IDLE_OPACITY);
+      renderedFaceState = null;
+      renderedDots = [];
+      setFaceDetectionBadge(true, 'Adjusting to face');
+      drawFaceGuide();
+      updateDetectedFace();
     }
 
     function stopLandmarkDetection() {
       landmarkDetectionRunning = false;
-      if (landmarkRafId) {
-        cancelAnimationFrame(landmarkRafId);
-        landmarkRafId = null;
+      if (detectionRafId) {
+        cancelAnimationFrame(detectionRafId);
+        detectionRafId = null;
       }
-      previousBoxes = [];
+      if (detectionTimerId) {
+        clearTimeout(detectionTimerId);
+        detectionTimerId = null;
+      }
+      targetFaceState = null;
+      renderedFaceState = null;
+      renderedDots = [];
       clearOverlay();
       faceOverlay.style.display = 'none';
-      setFaceGuideVisible(false);
       setFaceDetectionBadge(false);
     }
 
@@ -452,13 +494,24 @@
         });
         video.srcObject = stream;
         video.style.display = 'block';
+        setCaptureIndicator(true, 'Live preview', capturedFrames.length);
         cameraStatusText.textContent = "Adjusting to face...";
-        video.onloadedmetadata = () => {
+        video.onloadedmetadata = async () => {
+          await video.play().catch(() => null);
+          hideCameraPlaceholder();
           syncOverlaySize();
           startLandmarkDetection();
         };
+        if (video.readyState >= 1) {
+          await video.play().catch(() => null);
+          hideCameraPlaceholder();
+          syncOverlaySize();
+          startLandmarkDetection();
+        }
         return true;
       } catch (err) {
+        setCaptureIndicator(false);
+        setCameraPlaceholder('Camera unavailable', err.message || 'Could not access the front camera');
         alert("Could not access camera: " + err.message);
         resetUI();
         return false;
@@ -474,6 +527,8 @@
         video.style.display = 'none';
         cameraStatusText.textContent = "Camera Off";
       }
+      setCaptureIndicator(false);
+      setCameraPlaceholder('Camera stopped', 'Start another scan to show your face preview again');
     }
 
     async function captureFrame() {
@@ -505,6 +560,7 @@
       instructions.style.display = 'block';
       results.style.display = 'none';
       isScanning = false;
+      setCaptureIndicator(Boolean(stream), 'Live preview', capturedFrames.length);
       // stopCamera(); // Camera must remain live
     }
 
@@ -531,6 +587,7 @@
       if (isScanning) return;
       isScanning = true;
       capturedFrames = [];
+      setCaptureIndicator(true, 'Preparing capture', 0);
 
       startBtn.disabled = true;
       stopBtn.disabled = false;
@@ -548,6 +605,7 @@
       try {
         // Rule 1: Wait 2 seconds for user to face camera
         updateProgress(10, "Stabilizing camera (2s)...");
+        setCaptureIndicator(true, 'Center your face in frame', capturedFrames.length);
         await new Promise(r => setTimeout(r, 2000));
 
         // Rule 1: Capture exactly 3 frames over 5 seconds (≈1.6 sec gap)
@@ -556,15 +614,18 @@
           updateProgress(20 + (i * 20), `Burst Capture: Frame ${i + 1}/3...`);
           const blob = await captureFrame();
           capturedFrames.push(blob);
+          setCaptureIndicator(true, `Capturing frame ${i + 1} of 3`, capturedFrames.length);
           
           if (i < 2) {
              // Wait ~1.6s between frames
+             setCaptureIndicator(true, 'Hold steady for next frame', capturedFrames.length);
              await new Promise(r => setTimeout(r, 1600)); 
           }
         }
 
         if (capturedFrames.length === 3) {
           updateProgress(80, "Analyzing Bio-Stress Data...");
+          setCaptureIndicator(true, 'Analyzing captured frames', capturedFrames.length);
           // stopCamera(); // REMOVED: Camera remains LIVE
 
           const email = resolveUserEmail();
@@ -600,10 +661,12 @@
             }
           }
           updateProgress(100, "Scan Secured");
+          setCaptureIndicator(true, 'Capture complete', capturedFrames.length);
           displayResults(result.data);
         }
 
       } catch (err) {
+        setCaptureIndicator(true, 'Live preview', capturedFrames.length);
         alert("System error: " + err.message);
         resetUI();
       } finally {
@@ -627,6 +690,7 @@
       results.style.display = 'block';
       progressWrap.style.display = 'none';
       retakeBtn.disabled = false;
+      setCaptureIndicator(true, 'Live preview', capturedFrames.length);
 
       const emotionColor = data.emotion === 'happy' ? 'text-mint' :
         (['sad', 'anxious', 'angry'].includes(data.emotion) ? 'text-danger' : 'text-primary');
@@ -694,6 +758,7 @@
 
     // Rule 1: Camera opens once when page loads
     window.onload = () => {
+      setCameraPlaceholder('Waiting for camera access', 'Allow permissions to show your face preview here');
       startCamera();
     };
 
