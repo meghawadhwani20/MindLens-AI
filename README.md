@@ -1,9 +1,12 @@
 # MindLens AI: Multimodal Stress Detection & Predictive Health Analytics
 **MindLens AI** is a digital wellness framework that addresses the lack of real-time, objective stress monitoring. Unlike traditional "single-signal" devices, this system fuses IoT physiological data, computer vision-based behavioral analysis, and lifestyle tracking into a unified machine learning pipeline. It achieves an **87.45%** stress classification accuracy using a transparent, explainable AI approach.
 
-#### **The Problem**: Over one billion people globally suffer from mental health disorders. Current solutions rely heavily on subjective self-reporting, which lacks the temporal resolution required for early, life-saving intervention.
-#### **The Goal**: Move from "reactive" healthcare (treating symptoms after a breakdown) to "proactive" wellness by detecting physiological and affective stress markers before they escalate.
-#### **The Strategy**: I implemented a "Privacy by Design" architecture, utilizing 10,000 statistically validated synthetic records to train robust models without risking sensitive patient health information (PHI).
+#### **The Problem**
+Over one billion people globally suffer from mental health disorders. Current solutions rely heavily on subjective self-reporting, which lacks the temporal resolution required for early, life-saving intervention.
+#### **The Goal**
+Move from "reactive" healthcare (treating symptoms after a breakdown) to "proactive" wellness by detecting physiological and affective stress markers before they escalate.
+#### **The Strategy**
+I implemented a "Privacy by Design" architecture, utilizing 10,000 statistically validated synthetic records to train robust models without risking sensitive patient health information (PHI).
 
 <p align="center">
   <img src="Login Signup.png" width="850">
