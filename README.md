@@ -30,7 +30,9 @@ The IoT layer captures real-time biometric signals using an ESP32 microcontrolle
 - Noise-filtered physiological acquisition
 - Low-cost embedded hardware setup
 
-![Hardware](Hardware Setup.jfif)
+<p align="center">
+  <img src="Hardware Setup.jfif" width="700">
+</p>
 
 ### B. Computer Vision Layer (Affective Analysis)
 This layer analyzes facial expressions and behavioral cues for emotion-aware stress detection.
