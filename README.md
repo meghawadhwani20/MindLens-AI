@@ -11,6 +11,7 @@ The framework follows a modular three-layer architecture optimized for:
 - Low-latency processing
 - Secure cloud communication
 - Scalable AI inference
+
 ![System Architecture](Architecture.jpg)
 
 ### A. IoT Layer (Physiological Monitoring)
@@ -28,6 +29,8 @@ The IoT layer captures real-time biometric signals using an ESP32 microcontrolle
 - Real-time serial communication
 - Noise-filtered physiological acquisition
 - Low-cost embedded hardware setup
+
+![Hardware](Hardware Setup.jfif)
 
 ### B. Computer Vision Layer (Affective Analysis)
 This layer analyzes facial expressions and behavioral cues for emotion-aware stress detection.
