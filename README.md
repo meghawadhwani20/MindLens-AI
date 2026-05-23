@@ -67,37 +67,34 @@ The analytics engine processes multimodal inputs and predicts stress-related hea
 - Wellness score
 
 
-
-## 3. Data Pipeline
-ESP32 Sensors
-      ↓
-Serial Communication
-      ↓
-FastAPI Backend
-      ↓
-Computer Vision Processing
-      ↓
-Feature Engineering
-      ↓
-Machine Learning Models
-      ↓
-Supabase PostgreSQL Database
-      ↓
-Dashboard & Wellness Insights
-
-
 ## 2.Project Structure
 MindLens-AI/
-├── hardware/             # ESP32 C++ Firmware (Pulse/Temp sensing logic)
-├── backend/              # FastAPI Application (High-concurrency server)
-│   ├── api/              # Endpoints for real-time data streaming
-│   ├── middleware/       # JWT Authentication & Request Logging
-│   └── main.py           # Server entry point
-├── models/               # ML Pipeline & Weights
+├── hardware/             
+│   └── ESP32 firmware and sensor integration
+
+├── backend/              
+│   ├── api/              
+│   ├── middleware/       
+│   └── main.py           
+
+├── models/               
 │   ├── stress_classifier.pkl
 │   └── physiological_regressor.pkl
-├── scripts/              # MediaPipe & DeepFace processing logic
-├── database/             # Supabase Schema (PostgreSQL with RLS)
+
+├── scripts/              
+│   ├── mediapipe_processing.py
+│   ├── deepface_analysis.py
+│   └── data_preprocessing.py
+
+├── database/             
+│   └── Supabase PostgreSQL schema
+
+├── dataset/              
+│   └── Synthetic multimodal wellness dataset
+
+├── dashboard/            
+│   └── Visualization and analytics dashboard
+
 └── README.md
 
 
