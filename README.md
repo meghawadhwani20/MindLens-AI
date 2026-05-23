@@ -11,6 +11,7 @@ The framework follows a modular three-layer architecture optimized for:
 - Low-latency processing
 - Secure cloud communication
 - Scalable AI inference
+![System Architecture](Architecture.jpg)
 
 ### A. IoT Layer (Physiological Monitoring)
 The IoT layer captures real-time biometric signals using an ESP32 microcontroller.
@@ -65,6 +66,20 @@ The analytics engine processes multimodal inputs and predicts stress-related hea
 - Sleep quality impact
 - Fatigue estimation
 - Wellness score
+
+### D.  AI Wellness Assistant
+MindLens AI also integrates a **DeepSeek AI API-based Wellness Assistant** designed to provide intelligent and personalized mental wellness support.
+
+ AI assistant can provide:
+- Personalized wellness suggestions
+- Stress management recommendations
+- Sleep improvement tips
+- Productivity and focus guidance
+- Emotional wellness support
+
+### Features
+- Real-time AI-generated wellness insights
+- Personalized user interaction
 
 
 ## 2.Project Structure
