@@ -5,6 +5,14 @@
 **The Goal**: Move from "reactive" healthcare (treating symptoms after a breakdown) to "proactive" wellness by detecting physiological and affective stress markers before they escalate.
 **The Strategy**: I implemented a "Privacy by Design" architecture, utilizing 10,000 statistically validated synthetic records to train robust models without risking sensitive patient health information (PHI).
 
+<p align="center">
+  <img src="Login Signup.png" width="850">
+</p>
+
+<p align="center">
+  <img src="Homescreen.png" width="850">
+</p>
+
 ## 1. System Architecture
 The framework follows a modular three-layer architecture optimized for:
 - Real-time data ingestion
@@ -34,6 +42,10 @@ The IoT layer captures real-time biometric signals using an ESP32 microcontrolle
   <img src="Hardware Setup.jfif" width="700">
 </p>
 
+<p align="center">
+  <img src="Habit Form.png" width="850">
+</p>
+
 ### B. Computer Vision Layer (Affective Analysis)
 This layer analyzes facial expressions and behavioral cues for emotion-aware stress detection.
 
@@ -52,6 +64,10 @@ This layer analyzes facial expressions and behavioral cues for emotion-aware str
 - Happy
 - Sad
 - Fatigue indicators
+
+<p align="center">
+  <img src="ScreenScanner.png" width="850">
+</p>
 
 ### C. Analytics & Predictive AI Layer
 The analytics engine processes multimodal inputs and predicts stress-related health indicators.
@@ -72,6 +88,10 @@ The analytics engine processes multimodal inputs and predicts stress-related hea
 - Fatigue estimation
 - Wellness score
 
+<p align="center">
+  <img src="Dashboard.png" width="850">
+</p>
+
 ### D.  AI Wellness Assistant
 MindLens AI also integrates a **DeepSeek AI API-based Wellness Assistant** designed to provide intelligent and personalized mental wellness support.
 
@@ -85,6 +105,10 @@ MindLens AI also integrates a **DeepSeek AI API-based Wellness Assistant** desig
 ### Features
 - Real-time AI-generated wellness insights
 - Personalized user interaction
+
+<p align="center">
+  <img src="Chatbot.png" width="850">
+</p>
 
 
 ## 2.Project Structure
