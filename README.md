@@ -91,6 +91,8 @@ The analytics engine processes multimodal inputs and predicts stress-related hea
 - Fatigue estimation
 - Wellness score
 
+The model successfully predicts 7 health indicators simultaneously. Specifically, it reached a Correlation Coefficient (R²) of 0.84 for heart rate predictions and an 87.45% F1-Score for stress classification.
+
 <p align="center">
   <img src="Dashboard.png" width="850">
 </p>
