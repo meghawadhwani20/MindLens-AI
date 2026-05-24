@@ -19,7 +19,7 @@ I implemented a "Privacy by Design" architecture, utilizing 10,000 statistically
 ## 1. System Architecture
 The framework follows a modular three-layer architecture optimized for:
 - Real-time data ingestion
-- Low-latency processing
+- Low-latency processing of <50ms
 - Secure cloud communication
 - Scalable AI inference
 
@@ -50,7 +50,7 @@ The IoT layer captures real-time biometric signals using an ESP32 microcontrolle
 </p>
 
 ### B. Computer Vision Layer (Affective Analysis)
-This layer analyzes facial expressions and behavioral cues for emotion-aware stress detection.
+This layer analyzes facial expressions and behavioral cues for emotion-aware stress detection within a 10–12 second.
 
 #### Pipeline
 1. **OpenCV**
@@ -96,7 +96,7 @@ The analytics engine processes multimodal inputs and predicts stress-related hea
 </p>
 
 ### D.  AI Wellness Assistant
-MindLens AI also integrates a **DeepSeek AI API-based Wellness Assistant** designed to provide intelligent and personalized mental wellness support.
+MindLens AI also integrates a **DeepSeek AI API-based Wellness Assistant** designed to provide intelligent and personalized mental wellness support under 60 seconds.
 
  AI assistant can provide:
 - Personalized wellness suggestions
